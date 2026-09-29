@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Attendance — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:2px">Mark Attendance</h1>
+  <p style="color:var(--text-muted);margin-bottom:20px" id="subtitle"></p>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
+    <select class="input" id="subj-select" style="width:auto"></select>
+    <input class="input" id="date-select" type="date" style="width:auto" value="2026-08-08"/>
+  </div>
+  <div class="card">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <b id="count-label">students</b>
+      <button class="btn btn-outline btn-sm" onclick="markAll()">Mark All Present</button>
+    </div>
+    <div id="roster" style="max-height:420px;overflow-y:auto" class="scrollbar-thin"></div>
+  </div>
+  <button class="btn btn-primary" style="margin-top:16px" onclick="saveAttendance()">Save Attendance</button>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/faculty/attendance.html", prefix: ".." });
+  const facultyUser = cmCurrentUser();
+  document.getElementById("subj-select").innerHTML = cmDB().subjects.filter(s=>s.faculty===facultyUser.name).map(s=>`<option value="${s.id}">${s.name}</option>`).join("") || cmDB().subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+
+  const students = cmList("students");
+  let statuses = {};
+  students.forEach(s => statuses[s.id] = "present");
+
+  function renderRoster(){
+    document.getElementById("subtitle").textContent = `${cmSubject(document.getElementById("subj-select").value).name} — B.Tech CSE 3rd Year A · ${document.getElementById("date-select").value}`;
+    document.getElementById("count-label").textContent = `${students.length} students`;
+    document.getElementById("roster").innerHTML = students.map(s => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-top:1px solid var(--border)">
+        <span style="width:26px;height:26px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">${s.name.split(" ").map(w=>w[0]).join("")}</span>
+        <div style="flex:1"><div style="font-weight:600;font-size:13.5px">${s.name}</div><div style="font-size:11px;color:var(--text-muted)">${s.roll} · ${s.attendance}%</div></div>
+        <button class="btn btn-sm att-btn" data-i="${s.id}" data-s="present" onclick="setStatus('${s.id}','present')">Present</button>
+        <button class="btn btn-sm att-btn" data-i="${s.id}" data-s="absent" onclick="setStatus('${s.id}','absent')">Absent</button>
+      </div>`).join("");
+    students.forEach(s => paintStatus(s.id));
+  }
+  function paintStatus(id){
+    document.querySelectorAll(`.att-btn[data-i="${id}"]`).forEach(b => {
+      const active = b.dataset.s === statuses[id];
+      b.style.background = active ? (statuses[id]==='present'?'var(--success-soft)':'var(--danger-soft)') : 'transparent';
+      b.style.color = active ? (statuses[id]==='present'?'var(--success)':'var(--danger)') : 'var(--text-muted)';
+      b.style.border = active ? 'none' : '1px solid var(--border)';
+    });
+  }
+  function setStatus(id, s){ statuses[id] = s; paintStatus(id); }
+  function markAll(){ students.forEach(s => statuses[s.id] = 'present'); students.forEach(s=>paintStatus(s.id)); cmToast('All students marked present'); }
+
+  document.getElementById("subj-select").onchange = renderRoster;
+  document.getElementById("date-select").onchange = renderRoster;
+  renderRoster();
+
+  function saveAttendance(){
+    const subjId = document.getElementById("subj-select").value;
+    const db = cmDB();
+    let row = db.attendance.subjects.find(a => a.id === subjId);
+    if (!row) { row = { id: subjId, attended: 0, total: 0, pct: 0 }; db.attendance.subjects.push(row); }
+    const presentCount = Object.values(statuses).filter(s => s === "present").length;
+    row.total += students.length;
+    row.attended += presentCount;
+    row.pct = Math.round((row.attended / row.total) * 100);
+    db.timeline.push({ id: "t_" + Date.now(), date: document.getElementById("date-select").value, time: "9:00 AM", subject: subjId, type: "Attendance", title: "Attendance updated", source: "Faculty" });
+    cmSaveDB(db);
+    cmToast("Attendance saved");
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Analytics — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:20px">Analytics</h1>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
+    <div class="card card-pad"><div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Avg attendance</div><div style="font-weight:800;font-size:22px;margin-top:6px">82%</div></div>
+    <div class="card card-pad"><div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Docs published (30d)</div><div style="font-weight:800;font-size:22px;margin-top:6px">24</div></div>
+    <div class="card card-pad"><div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Verification rate</div><div style="font-weight:800;font-size:22px;margin-top:6px">91%</div></div>
+  </div>
+  <div class="card card-pad">
+    <div class="field-label">Attendance trend by subject</div>
+    <div id="bars"></div>
+  </div>
+</div>
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/admin/analytics.html", prefix: ".." });
+  document.getElementById("bars").innerHTML = cmDB().attendance.subjects.map(a => `
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+      <div style="width:100px;font-size:12.5px">${cmSubject(a.id).name}</div>
+      <div class="progress-track" style="flex:1"><div class="progress-fill" style="width:${a.pct}%"></div></div>
+      <div style="width:40px;text-align:right;font-size:12.5px">${a.pct}%</div>
+    </div>`).join("");
+</script>
+</body>
+</html>

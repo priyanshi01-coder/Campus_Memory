@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Audit Logs — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:20px">Audit Logs</h1>
+  <div class="card"><div id="logs"></div></div>
+</div>
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/admin/audit-logs.html", prefix: ".." });
+  const logs = [
+    { action: "Document uploaded", who: "Dr. Meera Sharma", detail: "DBMS_Assignment_3.pdf", time: "Today, 12:30 PM" },
+    { action: "Notice published", who: "Dr. Meera Sharma", detail: "DBMS Assignment #3", time: "Today, 12:31 PM" },
+    { action: "Attendance edited", who: "Dr. Anil Verma", detail: "Mathematics — 8 Aug", time: "Today, 2:00 PM" },
+    { action: "Knowledge article verified", who: "Rajeev Malhotra", detail: "Back paper application process", time: "Yesterday" },
+    { action: "User role changed", who: "System Admin", detail: "Promoted CR to Class Moderator", time: "2 days ago" },
+  ];
+  document.getElementById("logs").innerHTML = logs.map(l => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--border)">
+      <div><div style="font-weight:600;font-size:13.5px">${l.action}</div><div style="font-size:11.5px;color:var(--text-muted)">${l.who} · ${l.detail}</div></div>
+      <div style="font-size:11.5px;color:var(--text-muted)">${l.time}</div>
+    </div>`).join("");
+</script>
+</body>
+</html>

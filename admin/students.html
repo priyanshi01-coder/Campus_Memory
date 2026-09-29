@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Students — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+    <div><h1 style="font-size:24px;margin-bottom:2px">Students</h1><p style="color:var(--text-muted)">Add, edit or remove students. Changes are saved to this browser's local database.</p></div>
+    <button class="btn btn-primary" onclick="openForm()">+ Add Student</button>
+  </div>
+  <div class="card"><table class="dtable">
+    <thead><tr><th>Name</th><th>Roll No.</th><th>Email</th><th>Section</th><th>Attendance</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+</div>
+
+<div id="modal" class="overlay" style="display:none" onclick="if(event.target===this) closeForm()">
+  <div class="modal">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <b id="modal-title">Add Student</b><button class="btn btn-ghost btn-sm" onclick="closeForm()">✕</button>
+    </div>
+    <div style="padding:20px">
+      <label class="field-label">Full name</label><input class="input" id="f-name" style="margin-bottom:12px"/>
+      <label class="field-label">Roll number</label><input class="input" id="f-roll" style="margin-bottom:12px"/>
+      <label class="field-label">Email</label><input class="input" id="f-email" type="email" style="margin-bottom:12px"/>
+      <label class="field-label">Section</label><input class="input" id="f-section" style="margin-bottom:12px" value="A"/>
+      <input type="hidden" id="f-id"/>
+      <button class="btn btn-primary" style="width:100%" onclick="saveStudent()">Save Student</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/admin/students.html", prefix: ".." });
+
+  function render(){
+    document.getElementById("rows").innerHTML = cmList("students").map(s => `
+      <tr>
+        <td style="font-weight:600">${s.name}</td>
+        <td>${s.roll}</td>
+        <td style="color:var(--text-muted)">${s.email}</td>
+        <td><span class="badge badge-neutral">${s.section}</span></td>
+        <td>${s.attendance}%</td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="icon-btn" onclick='editStudent(${JSON.stringify(s.id)})' title="Edit">✎</button>
+          <button class="icon-btn danger" onclick="deleteStudent('${s.id}')" title="Delete">🗑</button>
+        </td>
+      </tr>`).join("") || `<tr><td colspan="6"><div class="empty-state">No students yet. Add your first student.</div></td></tr>`;
+  }
+  function openForm(){
+    document.getElementById("modal-title").textContent = "Add Student";
+    ["f-name","f-roll","f-email","f-id"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("f-section").value = "A";
+    document.getElementById("modal").style.display = "flex";
+  }
+  function editStudent(id){
+    const s = cmGet("students", id);
+    document.getElementById("modal-title").textContent = "Edit Student";
+    document.getElementById("f-id").value = s.id;
+    document.getElementById("f-name").value = s.name;
+    document.getElementById("f-roll").value = s.roll;
+    document.getElementById("f-email").value = s.email;
+    document.getElementById("f-section").value = s.section;
+    document.getElementById("modal").style.display = "flex";
+  }
+  function closeForm(){ document.getElementById("modal").style.display = "none"; }
+  function saveStudent(){
+    const id = document.getElementById("f-id").value;
+    const name = document.getElementById("f-name").value.trim();
+    const roll = document.getElementById("f-roll").value.trim();
+    const email = document.getElementById("f-email").value.trim();
+    const section = document.getElementById("f-section").value.trim() || "A";
+    if (!name || !roll) { cmToast("Name and roll number are required", "error"); return; }
+    if (id) { cmUpdate("students", id, { name, roll, email, section }); cmToast("Student updated"); }
+    else { cmAdd("students", { name, roll, email, section, year: "3rd Year", course: "B.Tech CSE", attendance: 100 }); cmToast("Student added"); }
+    closeForm(); render();
+  }
+  function deleteStudent(id){
+    if (!confirm("Remove this student? This cannot be undone.")) return;
+    cmRemove("students", id); cmToast("Student removed"); render();
+  }
+  render();
+</script>
+</body>
+</html>

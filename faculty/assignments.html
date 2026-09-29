@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Assignments — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div><h1 style="font-size:24px;margin-bottom:2px">Assignments</h1><p style="color:var(--text-muted)">Assignments you've published across your classes.</p></div>
+    <button class="btn btn-primary" onclick="openWizard()">+ New Assignment</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px" id="a-grid"></div>
+</div>
+
+<div id="create-modal" class="overlay" style="display:none" onclick="if(event.target===this) closeWizard()">
+  <div class="modal">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <b id="wizard-heading">Create Assignment</b><button class="btn btn-ghost btn-sm" onclick="closeWizard()">✕</button>
+    </div>
+    <div style="padding:20px" id="wizard-body"></div>
+  </div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/faculty/assignments.html", prefix: ".." });
+  const facultyUser = cmCurrentUser();
+
+  function render(){
+    document.getElementById("a-grid").innerHTML = cmList("assignments").filter(a=>a.faculty===facultyUser.name).map(a => `
+      <div class="card card-pad">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="font-weight:700;margin-bottom:6px">${a.title}</div>
+          <div style="display:flex;gap:6px;flex:none">
+            <button class="icon-btn" onclick="editAssignment('${a.id}')">✎</button>
+            <button class="icon-btn danger" onclick="deleteAssignment('${a.id}')">🗑</button>
+          </div>
+        </div>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px">Due ${cmFmtDate(a.deadline)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px"><span>Submitted</span><b>${a.submitted}/${a.total}</b></div>
+        <div class="progress-track"><div class="progress-fill" style="width:${Math.round(a.submitted/a.total*100)}%"></div></div>
+      </div>`).join("") || `<div class="empty-state" style="grid-column:1/-1">You haven't published any assignments yet.</div>`;
+  }
+
+  let step = 1, editId = null, draft = {};
+  const total = 5;
+  function openWizard(){ step = 1; editId = null; draft = { subject: cmDB().subjects[0]?.id || "dbms", maxMarks: 20, deadline: "2026-08-25", topics: "" }; document.getElementById("wizard-heading").textContent = "Create Assignment"; document.getElementById("create-modal").style.display = "flex"; wizard(); }
+  function editAssignment(id){
+    const a = cmGet("assignments", id);
+    step = 1; editId = id;
+    draft = { title: a.title, subject: a.subject, description: a.instructions, maxMarks: a.maxMarks, deadline: a.deadline.slice(0,10), topics: (a.topics||[]).join(", ") };
+    document.getElementById("wizard-heading").textContent = "Edit Assignment";
+    document.getElementById("create-modal").style.display = "flex";
+    wizard();
+  }
+  function deleteAssignment(id){
+    if (!confirm("Delete this assignment? Students will no longer see it.")) return;
+    cmRemove("assignments", id); cmToast("Assignment deleted"); render();
+  }
+  function closeWizard(){ document.getElementById("create-modal").style.display = "none"; }
+
+  function wizard(){
+    const titles = ["Basic Information","Assignment Details","Deadline & Class","Topics","Preview"];
+    let body = "";
+    if (step===1) body = `<label class="field-label">Title</label><input class="input" style="margin-bottom:12px" id="w-title" value="${draft.title||''}" placeholder="e.g. Assignment #4"/><label class="field-label">Subject</label><select class="input" id="w-subject">${cmDB().subjects.map(s=>`<option value="${s.id}" ${s.id===draft.subject?'selected':''}>${s.name}</option>`).join("")}</select>`;
+    if (step===2) body = `<label class="field-label">Description / instructions</label><textarea class="input" rows="4" id="w-desc">${draft.description||''}</textarea><label class="field-label" style="margin-top:12px">Max marks</label><input class="input" type="number" id="w-marks" value="${draft.maxMarks}"/>`;
+    if (step===3) body = `<label class="field-label">Deadline</label><input class="input" type="date" id="w-deadline" value="${draft.deadline}"/><label class="field-label" style="margin-top:12px">Batch</label><input class="input" value="B.Tech CSE — 3rd Year A" disabled/>`;
+    if (step===4) body = `<label class="field-label">Topics (comma separated)</label><input class="input" id="w-topics" value="${draft.topics}" placeholder="Normalization, Transactions"/>`;
+    if (step===5) body = `<div class="card card-pad"><b>${document.getElementById('w-title')?document.getElementById('w-title').value:draft.title||'Untitled'}</b><div style="font-size:12.5px;color:var(--text-muted);margin-top:6px">Ready to ${editId?'update':'publish'} to B.Tech CSE — 3rd Year A</div></div>`;
+    document.getElementById("wizard-body").innerHTML = `
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:14px">Step ${step} of ${total} — ${titles[step-1]}</div>
+      ${body}
+      <div style="display:flex;gap:10px;margin-top:20px">
+        ${step>1?`<button class="btn btn-outline" style="flex:1" onclick="prevStep()">Back</button>`:""}
+        ${step<total?`<button class="btn btn-primary" style="flex:1" onclick="nextStep()">Next</button>`:`<button class="btn btn-primary" style="flex:1" onclick="publishAssignment()">${editId?'Save changes':'Publish Assignment'}</button>`}
+      </div>`;
+  }
+  function captureStep(){
+    if (step===1) { draft.title = document.getElementById("w-title").value.trim(); draft.subject = document.getElementById("w-subject").value; }
+    if (step===2) { draft.description = document.getElementById("w-desc").value.trim(); draft.maxMarks = parseInt(document.getElementById("w-marks").value)||20; }
+    if (step===3) { draft.deadline = document.getElementById("w-deadline").value; }
+    if (step===4) { draft.topics = document.getElementById("w-topics").value.trim(); }
+  }
+  function nextStep(){ captureStep(); step++; wizard(); }
+  function prevStep(){ captureStep(); step--; wizard(); }
+
+  function publishAssignment(){
+    if (!draft.title) { cmToast("Please add a title", "error"); step = 1; wizard(); return; }
+    const payload = {
+      title: draft.title, subject: draft.subject, faculty: facultyUser.name,
+      deadline: draft.deadline + "T23:59:00", announced: new Date().toISOString(),
+      maxMarks: draft.maxMarks || 20, status: "pending", priority: 50, effortHrs: 2,
+      topics: (draft.topics||"").split(",").map(t=>t.trim()).filter(Boolean),
+      instructions: draft.description || "", submissionMethod: "Portal upload (PDF)", attachment: "attachment.pdf",
+      submitted: 0, total: 62,
+    };
+    if (editId) { cmUpdate("assignments", editId, payload); cmToast("Assignment updated"); }
+    else { cmAdd("assignments", payload); cmToast("Assignment published to Campus Memory"); }
+    closeWizard(); render();
+  }
+  render();
+</script>
+</body>
+</html>

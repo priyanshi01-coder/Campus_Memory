@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Dashboard — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:2px">Department Overview</h1>
+  <p style="color:var(--text-muted);margin-bottom:22px">ABC Institute of Technology · Computer Science</p>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px" id="metrics"></div>
+
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start">
+    <div class="card card-pad">
+      <h3 style="font-size:15px;margin-bottom:14px">Academic Activity</h3>
+      <svg viewBox="0 0 400 140" style="width:100%;height:140px">
+        <polyline points="10,110 60,90 110,95 160,60 210,70 260,40 310,50 360,20" fill="none" stroke="var(--accent)" stroke-width="3"/>
+      </svg>
+      <div style="font-size:11.5px;color:var(--text-muted);text-align:center">Documents published over the last 8 weeks</div>
+    </div>
+    <div class="card card-pad">
+      <h3 style="font-size:15px;margin-bottom:14px">Pending Verification</h3>
+      <div style="font-size:28px;font-weight:800;color:var(--warning)">2</div>
+      <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px">items awaiting review</div>
+      <a href="./verification-queue.html" class="btn btn-outline btn-sm" style="width:100%">Open Verification Center</a>
+    </div>
+  </div>
+
+  <div class="card card-pad" style="margin-top:20px">
+    <h3 style="font-size:15px;margin-bottom:14px">Department comparison</h3>
+    <div id="dept-compare"></div>
+  </div>
+</div>
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/admin/dashboard.html", prefix: ".." });
+  const totalStudents = cmDB().departments.reduce((s,d)=>s+d.students,0);
+  const totalFaculty = cmDB().departments.reduce((s,d)=>s+d.faculty,0);
+  document.getElementById("metrics").innerHTML = `
+    <div class="card card-pad"><div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Students</div><div style="font-weight:800;font-size:22px;margin-top:6px">${totalStudents}</div></div>
+    <div class="card card-pad"><div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Faculty</div><div style="font-weight:800;font-size:22px;margin-top:6px">${totalFaculty}</div></div>
+    <div class="card card-pad"><div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Departments</div><div style="font-weight:800;font-size:22px;margin-top:6px">${cmDB().departments.length}</div></div>
+    <div class="card card-pad"><div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Active courses</div><div style="font-weight:800;font-size:22px;margin-top:6px">3</div></div>`;
+
+  document.getElementById("dept-compare").innerHTML = cmDB().departments.map(d => `
+    <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--border)">
+      <div style="width:140px;font-weight:600;font-size:13px">${d.name}</div>
+      <div class="progress-track" style="flex:1"><div class="progress-fill" style="width:${Math.min(100, d.students/3)}%"></div></div>
+      <div style="width:80px;text-align:right;font-size:12.5px;color:var(--text-muted)">${d.students} students</div>
+    </div>`).join("");
+</script>
+</body>
+</html>

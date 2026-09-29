@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Classes & Batches — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+    <div><h1 style="font-size:24px;margin-bottom:2px">Classes & Batches</h1><p style="color:var(--text-muted)">Add, edit or remove course batches and sections.</p></div>
+    <button class="btn btn-primary" onclick="openForm()">+ Add Batch</button>
+  </div>
+  <div class="card"><table class="dtable">
+    <thead><tr><th>Course</th><th>Year</th><th>Section</th><th>Students</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+</div>
+
+<div id="modal" class="overlay" style="display:none" onclick="if(event.target===this) closeForm()">
+  <div class="modal">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <b id="modal-title">Add Batch</b><button class="btn btn-ghost btn-sm" onclick="closeForm()">✕</button>
+    </div>
+    <div style="padding:20px">
+      <label class="field-label">Course</label><input class="input" id="f-course" style="margin-bottom:12px" value="B.Tech CSE"/>
+      <label class="field-label">Year</label><input class="input" id="f-year" style="margin-bottom:12px" value="1st Year"/>
+      <label class="field-label">Section</label><input class="input" id="f-section" style="margin-bottom:12px" value="A"/>
+      <label class="field-label">Students</label><input class="input" id="f-students" type="number" style="margin-bottom:12px" value="0"/>
+      <input type="hidden" id="f-id"/>
+      <button class="btn btn-primary" style="width:100%" onclick="saveBatch()">Save Batch</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/admin/classes.html", prefix: ".." });
+
+  function render(){
+    document.getElementById("rows").innerHTML = cmList("batches").map(b => `
+      <tr>
+        <td style="font-weight:600">${b.course}</td>
+        <td>${b.year}</td>
+        <td><span class="badge badge-neutral">${b.section}</span></td>
+        <td>${b.students}</td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="icon-btn" onclick="editBatch('${b.id}')">✎</button>
+          <button class="icon-btn danger" onclick="deleteBatch('${b.id}')">🗑</button>
+        </td>
+      </tr>`).join("") || `<tr><td colspan="5"><div class="empty-state">No batches yet.</div></td></tr>`;
+  }
+  function openForm(){
+    document.getElementById("modal-title").textContent = "Add Batch";
+    ["f-id"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("f-course").value = "B.Tech CSE";
+    document.getElementById("f-year").value = "1st Year";
+    document.getElementById("f-section").value = "A";
+    document.getElementById("f-students").value = 0;
+    document.getElementById("modal").style.display = "flex";
+  }
+  function editBatch(id){
+    const b = cmGet("batches", id);
+    document.getElementById("modal-title").textContent = "Edit Batch";
+    document.getElementById("f-id").value = b.id;
+    document.getElementById("f-course").value = b.course;
+    document.getElementById("f-year").value = b.year;
+    document.getElementById("f-section").value = b.section;
+    document.getElementById("f-students").value = b.students;
+    document.getElementById("modal").style.display = "flex";
+  }
+  function closeForm(){ document.getElementById("modal").style.display = "none"; }
+  function saveBatch(){
+    const id = document.getElementById("f-id").value;
+    const course = document.getElementById("f-course").value.trim();
+    const year = document.getElementById("f-year").value.trim();
+    const section = document.getElementById("f-section").value.trim();
+    const students = parseInt(document.getElementById("f-students").value) || 0;
+    if (!course) { cmToast("Course is required", "error"); return; }
+    if (id) { cmUpdate("batches", id, { course, year, section, students }); cmToast("Batch updated"); }
+    else { cmAdd("batches", { course, year, section, students }); cmToast("Batch added"); }
+    closeForm(); render();
+  }
+  function deleteBatch(id){
+    if (!confirm("Remove this batch? This cannot be undone.")) return;
+    cmRemove("batches", id); cmToast("Batch removed"); render();
+  }
+  render();
+</script>
+</body>
+</html>

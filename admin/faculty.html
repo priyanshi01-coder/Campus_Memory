@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Faculty — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+    <div><h1 style="font-size:24px;margin-bottom:2px">Faculty</h1><p style="color:var(--text-muted)">Add, edit or remove faculty members and their assigned subjects.</p></div>
+    <button class="btn btn-primary" onclick="openForm()">+ Add Faculty</button>
+  </div>
+  <div class="card"><table class="dtable">
+    <thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Subjects</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+</div>
+
+<div id="modal" class="overlay" style="display:none" onclick="if(event.target===this) closeForm()">
+  <div class="modal">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <b id="modal-title">Add Faculty</b><button class="btn btn-ghost btn-sm" onclick="closeForm()">✕</button>
+    </div>
+    <div style="padding:20px">
+      <label class="field-label">Full name</label><input class="input" id="f-name" style="margin-bottom:12px" placeholder="Dr. First Last"/>
+      <label class="field-label">Email</label><input class="input" id="f-email" type="email" style="margin-bottom:12px"/>
+      <label class="field-label">Department</label>
+      <select class="input" id="f-dept" style="margin-bottom:12px"></select>
+      <input type="hidden" id="f-id"/>
+      <button class="btn btn-primary" style="width:100%" onclick="saveFaculty()">Save Faculty</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/admin/faculty.html", prefix: ".." });
+  document.getElementById("f-dept").innerHTML = cmDB().departments.map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+
+  function render(){
+    document.getElementById("rows").innerHTML = cmList("facultyList").map(f => {
+      const dept = cmDB().departments.find(d => d.id === f.dept);
+      const subs = (f.subjects || []).map(sid => cmSubject(sid).name).join(", ") || "—";
+      return `<tr>
+        <td style="font-weight:600">${f.name}</td>
+        <td style="color:var(--text-muted)">${f.email}</td>
+        <td>${dept ? dept.name : f.dept}</td>
+        <td>${subs}</td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="icon-btn" onclick="editFaculty('${f.id}')" title="Edit">✎</button>
+          <button class="icon-btn danger" onclick="deleteFaculty('${f.id}')" title="Delete">🗑</button>
+        </td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="5"><div class="empty-state">No faculty yet.</div></td></tr>`;
+  }
+  function openForm(){
+    document.getElementById("modal-title").textContent = "Add Faculty";
+    ["f-name","f-email","f-id"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("modal").style.display = "flex";
+  }
+  function editFaculty(id){
+    const f = cmGet("facultyList", id);
+    document.getElementById("modal-title").textContent = "Edit Faculty";
+    document.getElementById("f-id").value = f.id;
+    document.getElementById("f-name").value = f.name;
+    document.getElementById("f-email").value = f.email;
+    document.getElementById("f-dept").value = f.dept;
+    document.getElementById("modal").style.display = "flex";
+  }
+  function closeForm(){ document.getElementById("modal").style.display = "none"; }
+  function saveFaculty(){
+    const id = document.getElementById("f-id").value;
+    const name = document.getElementById("f-name").value.trim();
+    const email = document.getElementById("f-email").value.trim();
+    const dept = document.getElementById("f-dept").value;
+    if (!name) { cmToast("Name is required", "error"); return; }
+    if (id) { cmUpdate("facultyList", id, { name, email, dept }); cmToast("Faculty updated"); }
+    else { cmAdd("facultyList", { name, email, dept, subjects: [] }); cmToast("Faculty added"); }
+    closeForm(); render();
+  }
+  function deleteFaculty(id){
+    if (!confirm("Remove this faculty member? This cannot be undone.")) return;
+    cmRemove("facultyList", id); cmToast("Faculty removed"); render();
+  }
+  render();
+</script>
+</body>
+</html>

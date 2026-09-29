@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Assignments — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:2px">Assignments</h1>
+  <p style="color:var(--text-muted);margin-bottom:20px">Everything due, in progress, or completed across your subjects.</p>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px" id="filter-bar"></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px" id="a-grid"></div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/student/assignments.html", prefix: ".." });
+
+  const statusMeta = {
+    pending: { label: "Upcoming", cls: "badge-info" },
+    in_progress: { label: "In Progress", cls: "badge-warning" },
+    submitted: { label: "Submitted", cls: "badge-success" },
+    late: { label: "Late", cls: "badge-danger" },
+  };
+  let activeFilter = "All";
+  const filters = ["All","Pending","In Progress","Submitted","Late"];
+  document.getElementById("filter-bar").innerHTML = filters.map(f => `<button class="btn btn-sm ${activeFilter===f?'btn-primary':'btn-outline'}" data-f="${f}" onclick="setFilter('${f}')">${f}</button>`).join("");
+
+  function setFilter(f){
+    activeFilter = f;
+    document.querySelectorAll("#filter-bar button").forEach(b => b.className = "btn btn-sm " + (b.dataset.f===f?'btn-primary':'btn-outline'));
+    render();
+  }
+
+  function render(){
+    let list = [...cmDB().assignments].sort((a,b) => new Date(a.deadline) - new Date(b.deadline));
+    const map = {"Pending":"pending","In Progress":"in_progress","Submitted":"submitted","Late":"late"};
+    if (activeFilter !== "All") list = list.filter(a => a.status === map[activeFilter]);
+
+    document.getElementById("a-grid").innerHTML = list.length ? list.map(a => {
+      const s = cmSubject(a.subject);
+      const days = cmDaysUntil(a.deadline);
+      const st = statusMeta[a.status];
+      return `<a href="./assignment-detail.html?id=${a.id}" class="card card-pad card-hover" style="display:block">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span class="badge" style="background:${s.color}22;color:${s.color}">${s.name}</span>
+          <span class="badge ${st.cls}">${st.label}</span>
+        </div>
+        <div style="font-weight:700;margin-bottom:6px">${a.title}</div>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px">${a.instructions.slice(0,80)}...</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:8px">
+          <span>${a.faculty}</span><span>${days>=0? days+" days left" : "Overdue"}</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${a.status==='submitted'?100:a.status==='in_progress'?45:0}%"></div></div>
+      </a>`;
+    }).join("") : `<div class="empty-state" style="grid-column:1/-1"><div class="icon-wrap">✅</div>You're all caught up.</div>`;
+  }
+  render();
+</script>
+</body>
+</html>

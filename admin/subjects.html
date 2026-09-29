@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Subjects — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+    <div><h1 style="font-size:24px;margin-bottom:2px">Subjects</h1><p style="color:var(--text-muted)">Add, edit or remove subjects offered this semester.</p></div>
+    <button class="btn btn-primary" onclick="openForm()">+ Add Subject</button>
+  </div>
+  <div class="card"><table class="dtable">
+    <thead><tr><th>Subject</th><th>Faculty</th><th>Current unit</th><th>Color</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+</div>
+
+<div id="modal" class="overlay" style="display:none" onclick="if(event.target===this) closeForm()">
+  <div class="modal">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <b id="modal-title">Add Subject</b><button class="btn btn-ghost btn-sm" onclick="closeForm()">✕</button>
+    </div>
+    <div style="padding:20px">
+      <label class="field-label">Subject name</label><input class="input" id="f-name" style="margin-bottom:12px"/>
+      <label class="field-label">Faculty</label>
+      <select class="input" id="f-faculty" style="margin-bottom:12px"></select>
+      <label class="field-label">Current unit</label><input class="input" id="f-unit" style="margin-bottom:12px" placeholder="Unit 1 — Introduction"/>
+      <label class="field-label">Color</label><input class="input" id="f-color" type="color" style="margin-bottom:12px;height:42px" value="#5B4FCF"/>
+      <input type="hidden" id="f-id"/>
+      <button class="btn btn-primary" style="width:100%" onclick="saveSubject()">Save Subject</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/admin/subjects.html", prefix: ".." });
+  document.getElementById("f-faculty").innerHTML = cmList("facultyList").map(f => `<option value="${f.name}">${f.name}</option>`).join("");
+
+  function render(){
+    document.getElementById("rows").innerHTML = cmList("subjects").map(s => `
+      <tr>
+        <td style="font-weight:600">${s.name}</td>
+        <td>${s.faculty}</td>
+        <td style="color:var(--text-muted)">${s.unit || "—"}</td>
+        <td><span style="display:inline-block;width:16px;height:16px;border-radius:5px;background:${s.color};vertical-align:middle"></span></td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="icon-btn" onclick="editSubject('${s.id}')">✎</button>
+          <button class="icon-btn danger" onclick="deleteSubject('${s.id}')">🗑</button>
+        </td>
+      </tr>`).join("") || `<tr><td colspan="5"><div class="empty-state">No subjects yet.</div></td></tr>`;
+  }
+  function openForm(){
+    document.getElementById("modal-title").textContent = "Add Subject";
+    ["f-name","f-unit","f-id"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("f-color").value = "#5B4FCF";
+    document.getElementById("modal").style.display = "flex";
+  }
+  function editSubject(id){
+    const s = cmGet("subjects", id);
+    document.getElementById("modal-title").textContent = "Edit Subject";
+    document.getElementById("f-id").value = s.id;
+    document.getElementById("f-name").value = s.name;
+    document.getElementById("f-faculty").value = s.faculty;
+    document.getElementById("f-unit").value = s.unit || "";
+    document.getElementById("f-color").value = s.color || "#5B4FCF";
+    document.getElementById("modal").style.display = "flex";
+  }
+  function closeForm(){ document.getElementById("modal").style.display = "none"; }
+  function saveSubject(){
+    const id = document.getElementById("f-id").value;
+    const name = document.getElementById("f-name").value.trim();
+    const faculty = document.getElementById("f-faculty").value;
+    const unit = document.getElementById("f-unit").value.trim();
+    const color = document.getElementById("f-color").value;
+    if (!name) { cmToast("Name is required", "error"); return; }
+    if (id) { cmUpdate("subjects", id, { name, faculty, unit, color }); cmToast("Subject updated"); }
+    else { cmAdd("subjects", { id: name.toLowerCase().replace(/[^a-z0-9]+/g,"-").slice(0,20), name, faculty, unit, color }); cmToast("Subject added"); }
+    closeForm(); render();
+  }
+  function deleteSubject(id){
+    if (!confirm("Remove this subject? This cannot be undone.")) return;
+    cmRemove("subjects", id); cmToast("Subject removed"); render();
+  }
+  render();
+</script>
+</body>
+</html>

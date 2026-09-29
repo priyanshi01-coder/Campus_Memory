@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Profile — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:20px">Profile</h1>
+  <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:20px;align-items:start">
+    <div class="card card-pad" style="text-align:center">
+      <div id="avatar" style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;margin:0 auto 14px"></div>
+      <div id="name-display" style="font-weight:800"></div>
+      <div id="dept-display" style="font-size:12.5px;color:var(--text-muted)"></div>
+    </div>
+    <div>
+      <form class="card card-pad" style="margin-bottom:16px" onsubmit="return saveProfile(event)">
+        <div class="field-label" style="margin-bottom:12px">Edit profile</div>
+        <label class="field-label">Full name</label><input class="input" id="f-name" style="margin-bottom:12px"/>
+        <label class="field-label">Email</label><input class="input" id="f-email" type="email" style="margin-bottom:16px"/>
+        <button class="btn btn-primary" type="submit">Save changes</button>
+      </form>
+      <form class="card card-pad" style="margin-bottom:16px" onsubmit="return changePassword(event)">
+        <div class="field-label" style="margin-bottom:12px">Change password</div>
+        <label class="field-label">Current password</label><input class="input" id="cp-old" type="password" style="margin-bottom:12px"/>
+        <label class="field-label">New password</label><input class="input" id="cp-new" type="password" style="margin-bottom:16px"/>
+        <button class="btn btn-outline" type="submit">Update password</button>
+      </form>
+      <div class="card card-pad">
+        <div class="field-label" style="margin-bottom:10px">Appearance</div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13.5px">Theme</span><span id="theme-switch-slot"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/admin/profile.html", prefix: ".." });
+  const user = cmCurrentUser();
+  document.getElementById("theme-switch-slot").innerHTML = cmThemeSwitchHtml();
+
+  function refresh(){
+    const u = cmCurrentUser();
+    document.getElementById("avatar").textContent = (u.name||"?").split(" ").map(w=>w[0]).slice(0,2).join("");
+    document.getElementById("name-display").textContent = u.name;
+    const dept = cmDB().departments.find(d => d.id === u.dept);
+    document.getElementById("dept-display").textContent = dept ? dept.name : (u.dept || "");
+    document.getElementById("f-name").value = u.name || "";
+    document.getElementById("f-email").value = u.email || "";
+  }
+  refresh();
+
+  function saveProfile(ev){
+    ev.preventDefault();
+    const patch = { name: document.getElementById("f-name").value.trim(), email: document.getElementById("f-email").value.trim() };
+    cmUpdate("users", user.id, patch);
+    cmSetSession({ ...cmSession(), ...patch });
+    cmToast("Profile updated"); refresh();
+    return false;
+  }
+  function changePassword(ev){
+    ev.preventDefault();
+    const oldPw = document.getElementById("cp-old").value;
+    const newPw = document.getElementById("cp-new").value;
+    const current = cmGet("users", user.id);
+    if (cmHash(oldPw) !== current.pass) { cmToast("Current password is incorrect", "error"); return false; }
+    if (newPw.length < 6) { cmToast("New password must be at least 6 characters", "error"); return false; }
+    cmUpdate("users", user.id, { pass: cmHash(newPw) });
+    cmToast("Password updated");
+    document.getElementById("cp-old").value = ""; document.getElementById("cp-new").value = "";
+    return false;
+  }
+</script>
+</body>
+</html>

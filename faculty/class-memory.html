@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Class Memory — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:2px">DBMS — Class Memory</h1>
+  <p style="color:var(--text-muted);margin-bottom:20px">What your class has struggled with and asked about, based on stored data.</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" id="grid"></div>
+</div>
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/faculty/class-memory.html", prefix: ".." });
+  const m = cmDB().classMemory.dbms;
+  document.getElementById("grid").innerHTML = `
+    <div class="card card-pad">
+      <div style="font-weight:800;margin-bottom:12px">Frequently Difficult Topics</div>
+      ${m.difficultTopics.map(t => `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${t.topic}</span><b>${t.pct}%</b></div><div class="progress-track"><div class="progress-fill" style="width:${t.pct}%;background:var(--warning)"></div></div></div>`).join("")}
+    </div>
+    <div class="card card-pad">
+      <div style="font-weight:800;margin-bottom:12px">Frequently Asked Questions</div>
+      ${m.faq.map(q => `<div style="font-size:13px;padding:8px 0;border-top:1px solid var(--border)">${q}</div>`).join("")}
+    </div>
+    <div class="card card-pad">
+      <div style="font-weight:800;margin-bottom:12px">Mark topics as important</div>
+      ${["Normalization","Transactions","ER-to-relational mapping","Indexing","SQL Joins"].map((t,i) => `<label style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px"><span>${t}</span><input type="checkbox" id="topic-${i}" data-topic="${t}" ${m.facultyImportant.includes(t)?'checked':''}/></label>`).join("")}
+      <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="saveImportantTopics()">Save</button>
+    </div>
+    <div class="card card-pad">
+      <div style="font-weight:800;margin-bottom:12px">Knowledge verification</div>
+      <p style="font-size:12.5px;color:var(--text-muted)">Student contributions awaiting your verification appear in the Verification Center.</p>
+      <a href="../admin/verification-queue.html" class="btn btn-outline btn-sm" style="margin-top:10px">Review contributions</a>
+    </div>`;
+  function saveImportantTopics(){
+    const picked = [];
+    document.querySelectorAll("[data-topic]").forEach(cb => { if (cb.checked) picked.push(cb.dataset.topic); });
+    const db = cmDB();
+    db.classMemory.dbms.facultyImportant = picked;
+    cmSaveDB(db);
+    cmToast("Important topics updated");
+  }
+</script>
+</body>
+</html>

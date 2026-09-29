@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Settings — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:20px">Settings</h1>
+
+  <div class="card card-pad" style="margin-bottom:16px">
+    <div class="field-label" style="margin-bottom:10px">Notifications</div>
+    <label style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13.5px"><span>Critical alerts</span><input type="checkbox" checked/></label>
+    <label style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13.5px"><span>Assignment reminders</span><input type="checkbox" checked/></label>
+    <label style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13.5px"><span>Class Memory contributions</span><input type="checkbox"/></label>
+  </div>
+
+  <div class="card card-pad" style="margin-bottom:16px;border-color:var(--accent)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:18px">🧠</span><span class="field-label" style="margin:0">Campus AI — connect a real model (optional)</span></div>
+    <p style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">
+      By default, Campus AI answers using a local, offline lookup over your Campus Memory data — no key required, and it works everywhere.
+      If you paste your own <b>Anthropic API key</b> below, Campus AI will call the real Claude API directly from your browser instead, still grounded in the same Campus Memory data.
+      <br/><br/>
+      <b style="color:var(--warning)">⚠ Security note:</b> this key is stored only in this browser's local storage and sent directly to Anthropic's API from your device — it is never sent anywhere else. Anyone with access to this browser/profile could read it from developer tools. Don't use a key with billing limits you're not comfortable with, and never do this on a shared computer. This exists for personal demo use only — a real product would keep the key on a server, never in the browser.
+    </p>
+    <label class="field-label">Anthropic API key</label>
+    <input class="input" id="api-key" type="password" placeholder="sk-ant-..." style="margin-bottom:10px"/>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveKey()">Save key</button>
+      <button class="btn btn-outline" style="flex:1" onclick="clearKey()">Remove key</button>
+    </div>
+    <div id="key-status" style="font-size:11.5px;color:var(--text-muted);margin-top:10px"></div>
+  </div>
+
+  <div class="card card-pad" style="margin-bottom:16px">
+    <div class="field-label" style="margin-bottom:10px">Data</div>
+    <button class="btn btn-outline btn-sm" onclick="cmToast('Preparing your academic data export…')">Download my academic data</button>
+  </div>
+
+  <div class="card card-pad" style="border-color:var(--danger)">
+    <div class="field-label" style="margin-bottom:10px;color:var(--danger)">Danger zone</div>
+    <button class="btn btn-sm" style="background:var(--danger-soft);color:var(--danger)" onclick="resetAll()">Reset local demo data</button>
+  </div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/student/settings.html", prefix: ".." });
+
+  function refreshKeyStatus(){
+    const k = cmGetApiKey();
+    document.getElementById("key-status").textContent = k ? `A key is currently saved (ending …${k.slice(-4)}). Campus AI will use the live API.` : "No key saved — Campus AI is using local grounded answers.";
+  }
+  refreshKeyStatus();
+
+  function saveKey(){
+    const k = document.getElementById("api-key").value.trim();
+    if (!k) { cmToast("Enter a key first", "error"); return; }
+    cmSetApiKey(k);
+    document.getElementById("api-key").value = "";
+    cmToast("API key saved to this browser");
+    refreshKeyStatus();
+  }
+  function clearKey(){
+    cmSetApiKey("");
+    cmToast("API key removed");
+    refreshKeyStatus();
+  }
+  function resetAll(){
+    if (!confirm("Reset all local demo data and sign out? This cannot be undone.")) return;
+    cmResetDB();
+    window.location.href = "../login.html";
+  }
+</script>
+</body>
+</html>

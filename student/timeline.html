@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Academic Timeline — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:2px">Academic Timeline</h1>
+  <p style="color:var(--text-muted);margin-bottom:20px">Every lecture, assignment, exam and announcement — in one chronological view.</p>
+
+  <div class="card card-pad" style="margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <select class="input" style="width:auto" id="f-subject" onchange="renderTL()">
+      <option value="">All subjects</option>
+    </select>
+    <select class="input" style="width:auto" id="f-type" onchange="renderTL()">
+      <option value="">All event types</option>
+      <option>Lecture</option><option>Assignment</option><option>Exam</option><option>Notes</option><option>Deadline</option><option>Attendance</option>
+    </select>
+    <span style="margin-left:auto;font-size:12.5px;color:var(--text-muted)" id="tl-count"></span>
+  </div>
+
+  <div id="tl-groups"></div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/student/timeline.html", prefix: ".." });
+
+  document.getElementById("f-subject").innerHTML += cmDB().subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+
+  const typeIcon = { Lecture: "🎓", Assignment: "📄", Exam: "📝", Notes: "🗒️", Deadline: "⏰", Attendance: "✅" };
+
+  function renderTL(){
+    const subj = document.getElementById("f-subject").value;
+    const type = document.getElementById("f-type").value;
+    let items = [...cmDB().timeline];
+    if (subj) items = items.filter(t => t.subject === subj);
+    if (type) items = items.filter(t => t.type === type);
+    items.sort((a,b) => new Date(a.date+"T"+cm24(a.time)) - new Date(b.date+"T"+cm24(b.time)));
+
+    const groups = {};
+    items.forEach(t => { (groups[t.date] = groups[t.date] || []).push(t); });
+
+    document.getElementById("tl-count").textContent = `${items.length} events`;
+
+    const today = "2026-08-08";
+    document.getElementById("tl-groups").innerHTML = Object.keys(groups).sort().map(date => {
+      const label = date === today ? "TODAY" : date < today ? cmFmtDate(date).toUpperCase() : (new Date(date) - new Date(today) <= 6*86400000 ? "THIS WEEK · " + cmFmtDate(date).toUpperCase() : "NEXT WEEK · " + cmFmtDate(date).toUpperCase());
+      return `<div style="margin-bottom:28px">
+        <div style="font-size:11.5px;font-weight:800;letter-spacing:.06em;color:var(--primary-2);margin-bottom:12px">${label}</div>
+        <div style="position:relative;padding-left:30px">
+          <div class="tl-line"></div>
+          ${groups[date].map(t => {
+            const s = cmSubject(t.subject);
+            return `<div style="position:relative;margin-bottom:16px">
+              <div class="tl-dot" style="position:absolute;left:-24px;top:4px;background:${s.color}"></div>
+              <div class="card card-pad card-hover" style="padding:14px 16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                  <span style="font-size:11.5px;color:var(--text-muted);font-weight:700">${t.time}</span>
+                  <span class="badge badge-neutral">${typeIcon[t.type]||""} ${t.type}</span>
+                </div>
+                <div style="font-weight:700;font-size:13.5px" style="color:${s.color}">${s.name}</div>
+                <div style="font-size:13.5px">${t.title}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Source: ${t.source}</div>
+              </div>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>`;
+    }).join("") || `<div class="empty-state"><div class="icon-wrap">🗓️</div>Nothing found for this filter.</div>`;
+  }
+  function cm24(t){
+    const [time, mer] = t.split(" ");
+    let [h,m] = time.split(":").map(Number);
+    if (mer === "PM" && h !== 12) h += 12;
+    if (mer === "AM" && h === 12) h = 0;
+    return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:00`;
+  }
+  renderTL();
+</script>
+</body>
+</html>

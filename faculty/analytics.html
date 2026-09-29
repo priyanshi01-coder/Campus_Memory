@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Analytics — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:2px">Analytics</h1>
+  <p style="color:var(--text-muted);margin-bottom:20px">DBMS — 3rd Year A performance overview.</p>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
+    <div class="card card-pad"><div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Avg. attendance</div><div style="font-weight:800;font-size:22px;margin-top:6px">83%</div></div>
+    <div class="card card-pad"><div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Assignment completion</div><div style="font-weight:800;font-size:22px;margin-top:6px">77%</div></div>
+    <div class="card card-pad"><div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Avg. quiz score</div><div style="font-weight:800;font-size:22px;margin-top:6px">72/100</div></div>
+  </div>
+  <div class="card card-pad">
+    <div class="field-label">Submission trend — last 4 assignments</div>
+    <svg viewBox="0 0 400 140" style="width:100%;height:140px">
+      <polyline points="20,90 140,60 260,40 380,20" fill="none" stroke="var(--primary-2)" stroke-width="3"/>
+      <g fill="var(--primary-2)"><circle cx="20" cy="90" r="4"/><circle cx="140" cy="60" r="4"/><circle cx="260" cy="40" r="4"/><circle cx="380" cy="20" r="4"/></g>
+    </svg>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted)"><span>A1</span><span>A2</span><span>A3</span><span>A4</span></div>
+  </div>
+</div>
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>cmRenderShell({ active: "/faculty/analytics.html", prefix: ".." });</script>
+</body>
+</html>

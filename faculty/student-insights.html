@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Student Insights — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:2px">Student Insights</h1>
+  <p style="color:var(--text-muted);margin-bottom:20px">Data-driven indicators only — no assumptions beyond what's recorded.</p>
+
+  <div class="card card-pad" style="margin-bottom:20px;border-color:var(--warning);background:var(--warning-soft)" id="attn-summary"></div>
+
+  <div class="card">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700">B.Tech CSE 3rd Year A roster</div>
+    <div id="roster"></div>
+  </div>
+</div>
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/faculty/student-insights.html", prefix: ".." });
+  const students = cmList("students");
+  const threshold = cmDB().attendance.threshold;
+  const atRisk = students.filter(s => s.attendance < threshold + 5);
+  const pendingAssignment = cmList("assignments")[0];
+
+  document.getElementById("attn-summary").innerHTML = `
+    <div style="font-weight:800;margin-bottom:8px">⚠ Needs attention</div>
+    <div style="font-size:13.5px">${atRisk.length} student(s) are approaching or below the ${threshold}% attendance threshold.</div>
+    ${pendingAssignment ? `<div style="font-size:13.5px">${pendingAssignment.total - pendingAssignment.submitted} student(s) have not submitted "${pendingAssignment.title}".</div>` : ""}`;
+
+  document.getElementById("roster").innerHTML = students.map(s => `
+    <div style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid var(--border)">
+      <div style="flex:1;font-weight:600;font-size:13.5px">${s.name}</div>
+      <div style="width:110px;font-size:12.5px;color:${s.attendance<threshold+5?'var(--warning)':'var(--text-muted)'}">Att: ${s.attendance}%</div>
+      ${s.attendance < threshold + 5 ? '<span class="badge badge-danger">Needs attention</span>' : '<span class="badge badge-success">On track</span>'}
+    </div>`).join("") || `<div class="empty-state">No students on this roster yet.</div>`;
+</script>
+</body>
+</html>

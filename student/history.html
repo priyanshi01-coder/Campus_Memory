@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Academic History — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:2px">Academic History</h1>
+  <p style="color:var(--text-muted);margin-bottom:20px">Your academic journey over time.</p>
+  <div id="hist-list"></div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/student/history.html", prefix: ".." });
+  document.getElementById("hist-list").innerHTML = cmDB().history.map(h => `
+    <div class="card card-pad" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div><b>${h.year}</b> <span style="color:var(--text-muted)">· ${h.sem}</span></div>
+        ${h.gpa ? `<span class="badge badge-success">GPA ${h.gpa}</span>` : `<span class="badge badge-info">In progress</span>`}
+      </div>
+      <div style="display:flex;gap:26px;font-size:13px">
+        <div><span style="color:var(--text-muted)">Subjects</span> <b>${h.subjects}</b></div>
+        <div><span style="color:var(--text-muted)">Attendance</span> <b>${h.attendance}%</b></div>
+      </div>
+    </div>`).join("");
+</script>
+</body>
+</html>

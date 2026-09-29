@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Upload Document — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:2px">Upload Document</h1>
+  <p style="color:var(--text-muted);margin-bottom:22px">Upload a notice, assignment, or syllabus. Campus Memory will extract structured information for your review.</p>
+
+  <div id="step-upload" class="card card-pad" style="max-width:600px;text-align:center;padding:44px 24px">
+    <div style="font-size:34px;margin-bottom:10px">📄</div>
+    <div style="font-weight:700;margin-bottom:6px">DBMS_Assignment_3.pdf</div>
+    <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:20px">Drag & drop, or use the demo file already selected below.</div>
+    <input class="input" type="file" style="margin-bottom:16px"/>
+    <button class="btn btn-primary" style="width:100%" onclick="startExtraction()">Extract with AI</button>
+  </div>
+
+  <div id="step-loading" style="display:none;text-align:center;padding:60px 0;color:var(--text-muted)">
+    <div style="font-size:30px;margin-bottom:10px">🧠</div>
+    <div id="load-txt" style="font-weight:600">Reading document…</div>
+  </div>
+
+  <div id="step-review" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+      <div class="card card-pad">
+        <div class="field-label">Document preview</div>
+        <div style="background:var(--surface-2);border-radius:10px;padding:20px;font-size:12.5px;line-height:1.8;color:var(--text-muted);font-family:monospace">
+          DBMS Assignment 3 — Normalization & Transactions<br/>
+          Submission deadline: 14 August 2026, 11:59 PM<br/>
+          Applicable to: B.Tech CSE, 3rd Year, Section A<br/><br/>
+          Q1. Explain 1NF, 2NF and 3NF with examples.<br/>
+          Q2. Convert the given schema into 3NF.<br/>
+          Q3. Explain ACID properties of a transaction.<br/>
+          Q4. Give an example of a non-serializable schedule.<br/>
+          Q5. Explain indexing and its role in query optimization.<br/><br/>
+          Submit as a single PDF via the student portal.
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="field-label">AI EXTRACTED INFORMATION</div>
+        <div id="extracted-fields"></div>
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button class="btn btn-outline" style="flex:1" onclick="cmToast('Fields unlocked for editing')">Edit</button>
+          <button class="btn btn-primary" style="flex:1" onclick="approveExtraction()">Approve</button>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn btn-primary" id="publish-btn" style="padding:13px 30px" disabled onclick="publishNow()">Publish to Campus Memory</button>
+    </div>
+  </div>
+
+  <div id="step-done" style="display:none" class="card card-pad" style="max-width:520px;text-align:center;padding:44px">
+    <div style="font-size:36px;margin-bottom:10px">✅</div>
+    <h3 style="font-size:18px;margin-bottom:8px">Published to Campus Memory</h3>
+    <p style="color:var(--text-muted);font-size:13.5px;margin-bottom:20px">62 students in B.Tech CSE — 3rd Year A will now see this on their timeline and dashboard.</p>
+    <a href="../student/dashboard.html" class="btn btn-outline">Preview as a student →</a>
+  </div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/faculty/upload-document.html", prefix: ".." });
+
+  const stages = ["Reading document…","Identifying subject and deadline…","Extracting topics and instructions…","Preparing for your review…"];
+
+  function startExtraction(){
+    document.getElementById("step-upload").style.display = "none";
+    document.getElementById("step-loading").style.display = "block";
+    let i = 0;
+    const iv = setInterval(() => { document.getElementById("load-txt").textContent = stages[i % stages.length]; i++; }, 500);
+    setTimeout(() => {
+      clearInterval(iv);
+      document.getElementById("step-loading").style.display = "none";
+      document.getElementById("step-review").style.display = "block";
+      renderFields();
+    }, 2200);
+  }
+
+  function fieldRow(label, value, confidence){
+    const cMap = { High: ["✓","var(--success)"], Medium: ["⚠","var(--warning)"], Low: ["⚠","var(--danger)"] };
+    const [icon,color] = cMap[confidence];
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--border)">
+      <div><div style="font-size:11.5px;color:var(--text-muted);font-weight:700;text-transform:uppercase">${label}</div><div style="font-weight:700;font-size:13.5px">${value}</div></div>
+      <div style="font-size:12px;font-weight:700;color:${color}">${icon} ${confidence} confidence</div>
+    </div>`;
+  }
+
+  function renderFields(){
+    document.getElementById("extracted-fields").innerHTML =
+      fieldRow("Subject", "DBMS", "High") +
+      fieldRow("Assignment number", "3", "High") +
+      fieldRow("Deadline", "14 August 2026, 11:59 PM", "High") +
+      fieldRow("Batch", "B.Tech CSE — 3rd Year A", "High") +
+      fieldRow("Topics", "Normalization, Transactions, Indexing", "Medium") +
+      fieldRow("Submission method", "Single PDF via portal", "Medium") +
+      fieldRow("Room / venue", "Not applicable", "Low");
+  }
+
+  function approveExtraction(){
+    document.getElementById("publish-btn").disabled = false;
+    cmToast("Extraction approved");
+  }
+  function publishNow(){
+    document.getElementById("step-review").style.display = "none";
+    document.getElementById("step-done").style.display = "block";
+    cmToast("Assignment published to Campus Memory");
+  }
+</script>
+</body>
+</html>

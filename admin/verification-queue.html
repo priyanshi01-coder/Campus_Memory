@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Verification Center — Campus Memory</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+</head>
+<body>
+<div id="cm-shell"></div>
+<div id="cm-page-content">
+  <h1 style="font-size:24px;margin-bottom:2px">Verification Center</h1>
+  <p style="color:var(--text-muted);margin-bottom:20px">Review AI-extracted, faculty, and student-submitted information before it's marked verified.</p>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px" id="tabs"></div>
+  <div id="queue-list"></div>
+</div>
+
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/ai.js"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  cmRenderShell({ active: "/admin/verification-queue.html", prefix: ".." });
+  const tabs = ["AI Extracted","Student Contributions","Faculty Submissions","Pending Notices"];
+  let active = "AI Extracted";
+  document.getElementById("tabs").innerHTML = tabs.map(t => `<button class="btn btn-sm ${active===t?'btn-primary':'btn-outline'}" data-t="${t}" onclick="setTab('${t}')">${t}</button>`).join("");
+  function setTab(t){ active=t; document.querySelectorAll("#tabs button").forEach(b=>b.className="btn btn-sm "+(b.dataset.t===t?'btn-primary':'btn-outline')); render(); }
+
+  const items = [
+    { tab:"AI Extracted", title:"Internal Assessment Notice — CSE 3rd Year", by:"AI Extraction Engine", conf:"High", status:"pending" },
+    { tab:"AI Extracted", title:"DBMS Assignment #3 details", by:"AI Extraction Engine", conf:"Medium", status:"pending" },
+    { tab:"Student Contributions", title:"Revaluation document requirements", by:"Anonymous Student", conf:null, status:"pending" },
+    { tab:"Faculty Submissions", title:"DBMS Assignment #3 — final review", by:"Dr. Meera Sharma", conf:null, status:"approved" },
+    { tab:"Pending Notices", title:"Industrial training registration notice", by:"T&P Cell", conf:null, status:"pending" },
+  ];
+
+  function render(){
+    const list = items.filter(i => i.tab === active);
+    document.getElementById("queue-list").innerHTML = list.length ? list.map((i, idx) => `
+      <div class="card card-pad" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:700;margin-bottom:4px">${i.title}</div>
+            <div style="font-size:12px;color:var(--text-muted)">Submitted by ${i.by}${i.conf?` · Confidence: ${i.conf}`:''}</div>
+          </div>
+          <span class="badge ${i.status==='approved'?'badge-success':'badge-warning'}">${i.status==='approved'?'Approved':'AI EXTRACTED — NEEDS REVIEW'}</span>
+        </div>
+        ${i.status==='pending' ? `<div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="cmToast('Opened for editing')">Edit</button>
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="approveItem(this)">Approve</button>
+          <button class="btn btn-sm" style="flex:1;background:var(--danger-soft);color:var(--danger)" onclick="rejectItem(this)">Reject</button>
+        </div>` : ''}
+      </div>`).join("") : `<div class="empty-state"><div class="icon-wrap">✅</div>Nothing pending in this category.</div>`;
+  }
+  function approveItem(btn){ btn.closest(".card").remove(); cmToast("Marked as verified"); }
+  function rejectItem(btn){ btn.closest(".card").remove(); cmToast("Item rejected", "error"); }
+  render();
+</script>
+</body>
+</html>
